@@ -73,20 +73,25 @@ def get_ip():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        print('Usage: python3 nomura_fund_bot.py <username> <password> <amount>')
+    if len(sys.argv) != 3:
+        print('Usage: python3 nomura_fund_bot.py <fundcode> <amount>')
         exit(-1)
 
-    username_ = sys.argv[1]
-    password_ = sys.argv[2]
-    buy_amount = sys.argv[3]
-    file = open(os.path.dirname(os.path.realpath(__file__)) + "/fund_list.txt", "r")
-    fund_list = [i for i in file.read().splitlines()]
+    username_ = os.getenv('NOMURA_USERNAME', None)
+    password_ = os.getenv('NOMURA_PASSWORD', None)
+    if username_ is None or password_ is None:
+        print('Please set environment variable NOMURA_USERNAME and NOMURA_PASSWORD')
+        exit(-1)
+
+    fund_code = sys.argv[1]
+    buy_amount = sys.argv[2]
     buy_threshold = -1  # Change -1%
     user = login(username_, password_)
-    for fund in fund_list:
-        now_nav = get_estimate_nav(fund)
-        # Buy when stock go down
-        if now_nav['nav']['percent_change'] <= buy_threshold:
-            print('BUY', fund, buy_amount)
-            buy(user, fund, buy_amount)
+    now_nav = get_estimate_nav(fund_code)
+    today = f"{datetime.datetime.now():%Y-%m-%d}"
+    # Buy when stock go down
+    if now_nav['nav']['percent_change'] <= buy_threshold:
+        print(today, 'BUY', fund_code, buy_amount)
+        buy(user, fund_code, buy_amount)
+    else:
+        print(today, 'NOT_BUY', fund_code, buy_amount)
